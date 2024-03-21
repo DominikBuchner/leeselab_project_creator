@@ -35,9 +35,21 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     available_primers = available_primers.split(",")
     markers = markers.split(",")
     number_of_extraction_plates = len(plates)
-    number_of_pcr_plates = number_of_extraction_plates * pcr_replicates
-    number_of_librarys = math.ceil(number_of_pcr_plates / len(available_primers))
-    plates_per_library = int(number_of_pcr_plates / number_of_librarys)
+    number_of_pcr_plates = number_of_extraction_plates * pcr_replicates * len(markers)
+    librarys_per_marker = math.ceil(
+        (number_of_pcr_plates / len(markers)) / len(available_primers)
+    )
+    plates_per_library_per_marker = int(
+        (number_of_pcr_plates / librarys_per_marker) / len(markers)
+    )
+
+    print(
+        number_of_extraction_plates,
+        number_of_pcr_plates,
+        librarys_per_marker,
+        plates_per_library_per_marker,
+    )
+
     optimal_primer_order = [
         1,
         5,
@@ -64,3 +76,22 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
         20,
         24,
     ]
+
+    # generate the output dataframe
+    worklist_dataframe = pd.DataFrame()
+    # add the source plate
+    worklist_dataframe["source_plate"] = [
+        plate_letter for plate_letter in plates for _ in range(pcr_replicates)
+    ] * len(markers)
+
+    # add the respective librarys
+    worklist_dataframe["library"] = [
+        library
+        for library in range(1, librarys_per_marker * len(markers) + 1)
+        for _ in range(plates_per_library_per_marker)
+    ]
+
+    # calculate the optimal primer order for the 1st pcr
+    print(worklist_dataframe)
+
+    #### code still broken for uneven number of plates in the last library. Have to cut somehow. #####
