@@ -37,6 +37,7 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     number_of_extraction_plates = len(plates)
     number_of_pcr_plates = number_of_extraction_plates * pcr_replicates
     number_of_librarys = math.ceil(number_of_pcr_plates / len(available_primers))
+    plates_per_library = int(number_of_pcr_plates / number_of_librarys)
     optimal_primer_order = [
         1,
         5,
