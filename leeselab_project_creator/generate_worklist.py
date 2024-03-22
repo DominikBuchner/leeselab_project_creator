@@ -2,6 +2,79 @@ import pandas as pd
 import math
 
 
+# funtion to calculate one worklist per marker
+def worklist_per_marker(
+    available_primers,
+    extraction_plates,
+    pcr_replicates,
+    primer_name,
+    optimal_primers,
+    starting_library_number,
+):
+    # generate the output dataframe
+    output_worklist = pd.DataFrame()
+    output_worklist["source plate"] = [
+        extraction_plate
+        for extraction_plate in extraction_plates
+        for _ in range(pcr_replicates)
+    ]
+
+    # find the number of pcr plates for this marker
+    pcr_plate_count = len(output_worklist)
+
+    # find the number of librarys to distribute primers evenly
+    available_primers = available_primers.split(",")
+    available_primers = [int(primer) for primer in available_primers]
+    number_of_primers = len(available_primers)
+
+    while True:
+        if pcr_plate_count <= number_of_primers:
+            library_count = 1
+            break
+        elif pcr_plate_count % number_of_primers == 0:
+            library_count = int(pcr_plate_count / number_of_primers)
+            break
+        else:
+            number_of_primers -= 1
+
+    # calculate the number of plates per library
+    plates_per_library = int(pcr_plate_count / library_count)
+
+    # generate the library column
+    library_column = []
+
+    for i in range(library_count):
+        for _ in range(plates_per_library):
+            library_column.append(starting_library_number)
+        starting_library_number += 1
+
+    output_worklist["library"] = library_column
+
+    primers = []
+
+    # find the optimal primers for maximum library diversity
+    for primer in optimal_primers:
+        if len(primers) < plates_per_library:
+            if primer not in primers and primer in available_primers:
+                primers.append(primer)
+        else:
+            break
+
+    primers = primers * library_count
+    primers = [
+        "{} - {}".format(primer_name, primer_number) for primer_number in primers
+    ]
+
+    output_worklist["tagging primer"] = primers
+    output_worklist["1st pcr"] = ""
+    output_worklist["clean up"] = ""
+    output_worklist["2nd pcr"] = ""
+    output_worklist["normalization"] = ""
+    output_worklist["pooling"] = ""
+
+    return output_worklist, starting_library_number
+
+
 def generate_worklist(output_path, project, available_primers, pcr_replicates, markers):
     # generate the correct path to the file
     input_file = "{}_plate_layout.xlsx".format(project)
@@ -30,28 +103,7 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     # general worklist is done
     general_worklist["plate"] = plates
 
-    # calculate everything marker wise and concat the marker dfs in the end
-
-    # add the library x pcr replicates worklist
-    # calculate the number of librarys needed
-    available_primers = available_primers.split(",")
-    markers = markers.split(",")
-    number_of_extraction_plates = len(plates)
-    number_of_pcr_plates = number_of_extraction_plates * pcr_replicates * len(markers)
-    librarys_per_marker = math.ceil(
-        (number_of_pcr_plates / len(markers)) / len(available_primers)
-    )
-    plates_per_library_per_marker = int(
-        (number_of_pcr_plates / librarys_per_marker) / len(markers)
-    )
-
-    print(
-        number_of_extraction_plates,
-        number_of_pcr_plates,
-        librarys_per_marker,
-        plates_per_library_per_marker,
-    )
-
+    # optimal primer order for maximizing library diversity
     optimal_primer_order = [
         1,
         5,
@@ -79,21 +131,25 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
         24,
     ]
 
-    # generate the output dataframe
-    worklist_dataframe = pd.DataFrame()
-    # add the source plate
-    worklist_dataframe["source_plate"] = [
-        plate_letter for plate_letter in plates for _ in range(pcr_replicates)
-    ] * len(markers)
+    # gather the worklists here
+    worklists = []
 
-    # add the respective librarys
-    worklist_dataframe["library"] = [
-        library
-        for library in range(1, librarys_per_marker * len(markers) + 1)
-        for _ in range(plates_per_library_per_marker)
-    ]
+    # calculate everything marker wise and concat the marker dfs in the end
+    next_library = 1
+    markers = markers.split(",")
 
-    # calculate the optimal primer order for the 1st pcr
-    print(worklist_dataframe)
+    for primer in markers:
+        worklist, next_library = worklist_per_marker(
+            available_primers,
+            plates,
+            pcr_replicates,
+            primer,
+            optimal_primer_order,
+            next_library,
+        )
 
-    #### code still broken for uneven number of plates in the last library. Have to cut somehow. #####
+        worklists.append(worklist)
+
+    # concat the individual worklist to have a working table
+    working_table = pd.concat(worklists, axis=0)
+    print(working_table)
