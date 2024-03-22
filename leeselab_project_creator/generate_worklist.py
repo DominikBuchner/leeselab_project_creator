@@ -30,6 +30,8 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     # general worklist is done
     general_worklist["plate"] = plates
 
+    # calculate everything marker wise and concat the marker dfs in the end
+
     # add the library x pcr replicates worklist
     # calculate the number of librarys needed
     available_primers = available_primers.split(",")
