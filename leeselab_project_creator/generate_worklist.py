@@ -152,4 +152,18 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
 
     # concat the individual worklist to have a working table
     working_table = pd.concat(worklists, axis=0)
-    print(working_table)
+
+    # save both tables to excel to perform styling via openpyxl
+    savename_extraction = "{}.xlsx".format(output_path.joinpath("extraction_worklist"))
+    general_worklist.to_excel(savename_extraction
+        , index=False
+    )
+
+    savename_pcr = "{}.xlsx".format(output_path.joinpath("pcr_worklist"))
+    working_table.to_excel(savename_pcr
+        , index=False
+    )
+
+# function to add styling to the worklists
+def add_styling(extraction_worklist, pcr_worklist):
+    
