@@ -1,5 +1,87 @@
+import openpyxl
+from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
+from openpyxl.styles import Alignment, Color, PatternFill, Font
+from openpyxl.styles.borders import Border, Side
+from openpyxl.utils import get_column_letter
 import pandas as pd
 import math
+
+
+# funtion to calculate one worklist per marker
+def worklist_per_marker(
+    available_primers,
+    extraction_plates,
+    pcr_replicates,
+    primer_name,
+    optimal_primers,
+    starting_library_number,
+):
+    # generate the output dataframe
+    output_worklist = pd.DataFrame()
+    output_worklist["source plate"] = [
+        extraction_plate
+        for extraction_plate in extraction_plates
+        for _ in range(pcr_replicates)
+    ]
+
+    # find the number of pcr plates for this marker
+    pcr_plate_count = len(output_worklist)
+
+    # find the number of librarys to distribute primers evenly
+    available_primers = available_primers.split(",")
+    available_primers = [int(primer) for primer in available_primers]
+    number_of_primers = len(available_primers)
+
+    while True:
+        if pcr_plate_count <= number_of_primers:
+            library_count = 1
+            break
+        elif pcr_plate_count % number_of_primers == 0:
+            library_count = int(pcr_plate_count / number_of_primers)
+            break
+        else:
+            number_of_primers -= 1
+
+    # calculate the number of plates per library
+    plates_per_library = int(pcr_plate_count / library_count)
+
+    # generate the library column
+    library_column = []
+
+    for i in range(library_count):
+        for _ in range(plates_per_library):
+            library_column.append(starting_library_number)
+        starting_library_number += 1
+
+    output_worklist["library"] = library_column
+
+    primers = []
+
+    # find the optimal primers for maximum library diversity
+    for primer in optimal_primers:
+        if len(primers) < plates_per_library:
+            if primer not in primers and primer in available_primers:
+                primers.append(primer)
+        else:
+            break
+
+    primers = primers * library_count
+    primers = [
+        "{} - {}".format(primer_name, primer_number) for primer_number in primers
+    ]
+
+    output_worklist["tagging primer"] = primers
+    output_worklist["1st pcr"] = ""
+    output_worklist["clean up"] = ""
+    output_worklist["2nd pcr"] = ""
+    output_worklist["normalization"] = ""
+    output_worklist["pooling"] = ""
+
+    return (
+        output_worklist,
+        starting_library_number,
+        plates_per_library,
+    )
 
 
 def generate_worklist(output_path, project, available_primers, pcr_replicates, markers):
@@ -30,28 +112,7 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     # general worklist is done
     general_worklist["plate"] = plates
 
-    # calculate everything marker wise and concat the marker dfs in the end
-
-    # add the library x pcr replicates worklist
-    # calculate the number of librarys needed
-    available_primers = available_primers.split(",")
-    markers = markers.split(",")
-    number_of_extraction_plates = len(plates)
-    number_of_pcr_plates = number_of_extraction_plates * pcr_replicates * len(markers)
-    librarys_per_marker = math.ceil(
-        (number_of_pcr_plates / len(markers)) / len(available_primers)
-    )
-    plates_per_library_per_marker = int(
-        (number_of_pcr_plates / librarys_per_marker) / len(markers)
-    )
-
-    print(
-        number_of_extraction_plates,
-        number_of_pcr_plates,
-        librarys_per_marker,
-        plates_per_library_per_marker,
-    )
-
+    # optimal primer order for maximizing library diversity
     optimal_primer_order = [
         1,
         5,
@@ -79,21 +140,91 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
         24,
     ]
 
-    # generate the output dataframe
-    worklist_dataframe = pd.DataFrame()
-    # add the source plate
-    worklist_dataframe["source_plate"] = [
-        plate_letter for plate_letter in plates for _ in range(pcr_replicates)
-    ] * len(markers)
+    # gather the worklists here
+    worklists = []
 
-    # add the respective librarys
-    worklist_dataframe["library"] = [
-        library
-        for library in range(1, librarys_per_marker * len(markers) + 1)
-        for _ in range(plates_per_library_per_marker)
-    ]
+    # calculate everything marker wise and concat the marker dfs in the end
+    next_library = 1
+    markers = markers.split(",")
 
-    # calculate the optimal primer order for the 1st pcr
-    print(worklist_dataframe)
+    for primer in markers:
+        worklist, next_library, plates_per_library = worklist_per_marker(
+            available_primers,
+            plates,
+            pcr_replicates,
+            primer,
+            optimal_primer_order,
+            next_library,
+        )
 
-    #### code still broken for uneven number of plates in the last library. Have to cut somehow. #####
+        worklists.append(worklist)
+
+    # concat the individual worklist to have a working table
+    working_table = pd.concat(worklists, axis=0)
+
+    # save both tables to excel to perform styling via openpyxl
+    savename_extraction = "{}.xlsx".format(output_path.joinpath("extraction_worklist"))
+    general_worklist.to_excel(savename_extraction, index=False)
+
+    savename_pcr = "{}.xlsx".format(output_path.joinpath("pcr_worklist"))
+    working_table.to_excel(savename_pcr, index=False)
+
+    ## add the styling
+    add_styling(savename_extraction, savename_pcr, project)
+
+
+# function to add styling to the worklists
+def add_styling(extraction_worklist, pcr_worklist, project):
+
+    # open the extraction worklist first
+    wb = openpyxl.load_workbook(extraction_worklist)
+    ws = wb["Sheet1"]
+
+    # Iterate over all columns and adjust their widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # add a connected header cell
+    ws.insert_rows(1)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=7)
+    ws.cell(row=1, column=1).value = "Extraction worklist: {}".format(project)
+
+    # styling for the header
+    ws.cell(row=1, column=1).font = Font(bold=True)
+    ws.cell(row=1, column=1).alignment = Alignment(horizontal="center")
+
+    # add alternatig colors
+    ## add alternating cell styling and borders
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
+
+    for row in range(2, ws.max_row + 1):
+        for col in range(1, 8):
+            ws.cell(row=row, column=col).border = thin_border
+            if row % 2 == 0:
+                ws.cell(row=row, column=col).fill = fill
+
+    # merge cells where steps are executed together
+    for col in range(2, 6):
+        for row in range(3, ws.max_row + 1, 2):
+            ws.merge_cells(
+                start_row=row, end_row=row + 1, start_column=col, end_column=col
+            )
+
+    wb.save(extraction_worklist)
+    wb.close()
