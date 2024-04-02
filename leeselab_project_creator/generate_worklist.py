@@ -1,10 +1,7 @@
 import openpyxl
-from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
-from openpyxl.styles import Alignment, Color, PatternFill, Font
-from openpyxl.styles.borders import Border, Side
-from openpyxl.utils import get_column_letter
 import pandas as pd
-import math
+from openpyxl.styles import Alignment, PatternFill, Font
+from openpyxl.styles.borders import Border, Side
 
 
 # funtion to calculate one worklist per marker
@@ -170,11 +167,11 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     working_table.to_excel(savename_pcr, index=False)
 
     ## add the styling
-    add_styling(savename_extraction, savename_pcr, project)
+    add_styling(savename_extraction, savename_pcr, project, plates_per_library)
 
 
 # function to add styling to the worklists
-def add_styling(extraction_worklist, pcr_worklist, project):
+def add_styling(extraction_worklist, pcr_worklist, project, plates_per_library):
 
     # open the extraction worklist first
     wb = openpyxl.load_workbook(extraction_worklist)
@@ -227,4 +224,60 @@ def add_styling(extraction_worklist, pcr_worklist, project):
             )
 
     wb.save(extraction_worklist)
+    wb.close()
+
+    # add styling for the pcr worklist
+    wb = openpyxl.load_workbook(pcr_worklist)
+    ws = wb["Sheet1"]
+
+    # Iterate over all columns and adjust their widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = column[0].column_letter
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(cell.value)
+            except:
+                pass
+        adjusted_width = (max_length + 2) * 1.2
+        ws.column_dimensions[column_letter].width = adjusted_width
+
+    # add a connected header cell
+    ws.insert_rows(1)
+    ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
+    ws.cell(row=1, column=1).value = "Extraction worklist: {}".format(project)
+
+    # styling for the header
+    ws.cell(row=1, column=1).font = Font(bold=True)
+    ws.cell(row=1, column=1).alignment = Alignment(horizontal="center")
+
+    # add alternatig colors
+    ## add alternating cell styling and borders
+    thin_border = Border(
+        left=Side(style="thin"),
+        right=Side(style="thin"),
+        top=Side(style="thin"),
+        bottom=Side(style="thin"),
+    )
+
+    fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
+
+    for row in range(2, ws.max_row + 1):
+        for col in range(1, 9):
+            ws.cell(row=row, column=col).border = thin_border
+            if row % 2 == 0:
+                ws.cell(row=row, column=col).fill = fill
+
+    # merge cells where steps are executed together
+    for col in range(7, 9):
+        for row in range(3, ws.max_row + 1, plates_per_library):
+            ws.merge_cells(
+                start_row=row,
+                end_row=row + plates_per_library - 1,
+                start_column=col,
+                end_column=col,
+            )
+
+    wb.save(pcr_worklist)
     wb.close()

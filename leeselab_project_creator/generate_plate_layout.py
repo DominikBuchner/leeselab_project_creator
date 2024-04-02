@@ -1,7 +1,7 @@
 import pandas as pd
 import openpyxl
 from string import ascii_uppercase
-from openpyxl.styles import Alignment, Color, PatternFill, Font
+from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl.worksheet.dimensions import ColumnDimension, DimensionHolder
 from openpyxl.utils import get_column_letter
 from openpyxl.styles.borders import Border, Side
@@ -31,10 +31,15 @@ def generate_plate_layout(
 
     # extract the samples
     samples = [ws.cell(row=row, column=col).value for row in range(row, ws.max_row + 1)]
+    sample_count = len(samples)
+    replicate_numbers = sample_count * list(range(1, extraction_replicates + 1))
 
     # include the extraction replicates
     samples = sorted(list(enumerate(samples)) * extraction_replicates)
-    samples = [sample[1] for sample in samples]
+    samples = [
+        "{}_{}".format(sample[1], number)
+        for sample, number in zip(samples, replicate_numbers)
+    ]
 
     ## first sample will add with every step in the while loop
     number = 1
