@@ -243,7 +243,7 @@ def add_styling(input_file, project, plates_per_library):
     # add a connected header cell
     ws.insert_rows(1)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
-    ws.cell(row=1, column=1).value = "Extraction worklist: {}".format(project)
+    ws.cell(row=1, column=1).value = "PCR worklist: {}".format(project)
 
     # styling for the header
     ws.cell(row=1, column=1).font = Font(bold=True)

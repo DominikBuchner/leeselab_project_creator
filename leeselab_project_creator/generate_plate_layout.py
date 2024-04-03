@@ -169,7 +169,7 @@ def generate_plate_layout(
     ## add a header
     ws.insert_rows(1)
     ws.merge_cells(start_row=1, start_column=1, end_row=1, end_column=8)
-    ws.cell(row=1, column=1).value = "Project: {}".format(project_name)
+    ws.cell(row=1, column=1).value = "Plate Layout Project: {}".format(project_name)
 
     ## add alternating cell styling and borders
     thin_border = Border(
