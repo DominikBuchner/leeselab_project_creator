@@ -160,22 +160,23 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
     working_table = pd.concat(worklists, axis=0)
 
     # save both tables to excel to perform styling via openpyxl
-    savename_extraction = "{}.xlsx".format(output_path.joinpath("extraction_worklist"))
-    general_worklist.to_excel(savename_extraction, index=False)
-
-    savename_pcr = "{}.xlsx".format(output_path.joinpath("pcr_worklist"))
-    working_table.to_excel(savename_pcr, index=False)
+    # tables will be saved as sheets to the plate layout
+    with pd.ExcelWriter(
+        input_file, mode="a", if_sheet_exists="replace", engine="openpyxl"
+    ) as writer:
+        general_worklist.to_excel(writer, sheet_name="extraction_worklist", index=False)
+        working_table.to_excel(writer, sheet_name="pcr_worklist", index=False)
 
     ## add the styling
-    add_styling(savename_extraction, savename_pcr, project, plates_per_library)
+    add_styling(input_file, project, plates_per_library)
 
 
 # function to add styling to the worklists
-def add_styling(extraction_worklist, pcr_worklist, project, plates_per_library):
+def add_styling(input_file, project, plates_per_library):
 
     # open the extraction worklist first
-    wb = openpyxl.load_workbook(extraction_worklist)
-    ws = wb["Sheet1"]
+    wb = openpyxl.load_workbook(input_file)
+    ws = wb["extraction_worklist"]
 
     # Iterate over all columns and adjust their widths
     for column in ws.columns:
@@ -223,12 +224,8 @@ def add_styling(extraction_worklist, pcr_worklist, project, plates_per_library):
                 start_row=row, end_row=row + 1, start_column=col, end_column=col
             )
 
-    wb.save(extraction_worklist)
-    wb.close()
-
     # add styling for the pcr worklist
-    wb = openpyxl.load_workbook(pcr_worklist)
-    ws = wb["Sheet1"]
+    ws = wb["pcr_worklist"]
 
     # Iterate over all columns and adjust their widths
     for column in ws.columns:
@@ -279,5 +276,5 @@ def add_styling(extraction_worklist, pcr_worklist, project, plates_per_library):
                 end_column=col,
             )
 
-    wb.save(pcr_worklist)
+    wb.save(input_file)
     wb.close()
