@@ -16,7 +16,7 @@ How to run:
 `leeselab_project_creator` or `python -m leeselab_project_creator`
 
 ## How to use
-After starting the GUI will look like this:
+After starting the GUI will look like this:  
 ![alt text](image-1.png)
 
 The project creator needs an Excel list with sample names as input. 
@@ -29,11 +29,11 @@ Enter a project name and select a folder where to save the plate layout.
 Hit "Generate sample list".
 
 ## Example
-As an example sample list a list with 12 samples was selected:
-![alt text](image.png)
+As an example sample list a list with 12 samples was selected:  
+![alt text](image.png)  
 
-The example setup looks like this when it is completly filled:
-![alt text](image-2.png)
+The example setup looks like this when it is completly filled:  
+![alt text](image-2.png)  
 
 The project creator will generate a plate layout according to the settings.
 This will include the technical replicates to control for cross-contamination as well as the selected amount of extraction replicates (indicated by _1, _2 ...)
