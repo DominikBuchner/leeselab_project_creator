@@ -5,15 +5,15 @@
 ## How to install and run
 Installation via pip:
 
-`pip install leeselab_project_creator`
+`pip install leeselab-project-creator`
 
 How to update:
 
-`pip install --upgrade leeselab_project_creator`
+`pip install --upgrade leeselab-project-creator`
 
 How to run:
 
-`leeselab_project_creator` or `python -m leeselab_project_creator`
+`leeselab-project-creator` or `python -m leeselab-project-creator`
 
 ## How to use
 After starting the GUI will look like this:  
