@@ -129,7 +129,7 @@ def generate_plate_layout(
 
     # add tagging primers
     alpha = dict(zip(alpha, range(1, 97)))
-    out_df["Aliquotiert"] = ""
+    out_df["aliquoted"] = ""
     out_df["Primer\n2nd PCR"] = out_df["Lysis,\nExtraction,\nPCR Well"].map(alpha)
     out_df["Notes"] = ""
     out_df = out_df.reset_index(names="#")

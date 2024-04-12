@@ -71,6 +71,7 @@ def worklist_per_marker(
     output_worklist["1st pcr"] = ""
     output_worklist["clean up"] = ""
     output_worklist["2nd pcr"] = ""
+    output_worklist["gel 2nd pcr"] = ""
     output_worklist["normalization"] = ""
     output_worklist["pooling"] = ""
 
@@ -261,13 +262,13 @@ def add_styling(input_file, project, plates_per_library):
     fill = PatternFill(start_color="00C0C0C0", end_color="00C0C0C0", fill_type="solid")
 
     for row in range(2, ws.max_row + 1):
-        for col in range(1, 9):
+        for col in range(1, 10):
             ws.cell(row=row, column=col).border = thin_border
             if row % 2 == 0:
                 ws.cell(row=row, column=col).fill = fill
 
     # merge cells where steps are executed together
-    for col in range(7, 9):
+    for col in range(8, 10):
         for row in range(3, ws.max_row + 1, plates_per_library):
             ws.merge_cells(
                 start_row=row,
