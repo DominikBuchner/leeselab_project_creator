@@ -14,7 +14,11 @@ setuptools.setup(
     url="https://github.com/DominikBuchner/BOLDigger-commandline",
     packages=setuptools.find_packages(),
     license="MIT",
-    install_requires=["openpyxl>=3.1.1", "pandas>=1.5.3", "PySimpleGUI<=4.60.5"],
+    install_requires=[
+        "openpyxl>=3.1.1",
+        "pandas>=1.5.3",
+        "PySimpleGUI >= 4.60.0, <=4.60.5",
+    ],
     include_package_data=True,
     classifiers=[
         "Programming Language :: Python :: 3",
