@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="leeselab-project-creator",
-    version="1.1.0",
+    version="1.1.1",
     author="Dominik Buchner",
     author_email="dominik.buchner524@googlemail.com",
     description="The leeselab project creator.",
