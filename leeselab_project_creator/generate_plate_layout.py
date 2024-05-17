@@ -34,12 +34,13 @@ def generate_plate_layout(
     sample_count = len(samples)
     replicate_numbers = sample_count * list(range(1, extraction_replicates + 1))
 
-    # include the extraction replicates
-    samples = sorted(list(enumerate(samples)) * extraction_replicates)
-    samples = [
-        "{}_{}".format(sample[1], number)
-        for sample, number in zip(samples, replicate_numbers)
-    ]
+    # include the extraction replicates if they are greater than 1
+    if extraction_replicates > 1:
+        samples = sorted(list(enumerate(samples)) * extraction_replicates)
+        samples = [
+            "{}_{}".format(sample[1], number)
+            for sample, number in zip(samples, replicate_numbers)
+        ]
 
     ## first sample will add with every step in the while loop
     number = 1
