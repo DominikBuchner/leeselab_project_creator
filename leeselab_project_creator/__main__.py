@@ -71,6 +71,7 @@ def main():
                 tooltip="How many PCR replicates do you need?",
             )
         ],
+        [sg.Checkbox(text="Pool PCR replicates", default=False, key="pool_replicates")],
         [sg.Text("Primers to use:")],
         [
             sg.InputText(
@@ -151,8 +152,12 @@ def main():
         if event == sg.WIN_CLOSED or event == "Cancel":
             break
 
+        # find out if we are ready for processing
+        ready = [i for i in values.values()]
+        ready = ready[:6] + ready[7:8] + ready[10:]
+
         # enable generate button when all fields are filled
-        if all(values.values()):
+        if all(ready):
             window["generate"].update(disabled=False)
             if not updated_out:
                 window["output_text"].print("Ready to generate project files.")
@@ -182,6 +187,7 @@ def main():
                 available_primers=values["primers"],
                 pcr_replicates=values["pcr_replicates"],
                 markers=values["markers"],
+                pool_pcr_replicates=values["pool_replicates"],
             )
             window["output_text"].print(
                 "Plate layout and worklist saved to output folder."

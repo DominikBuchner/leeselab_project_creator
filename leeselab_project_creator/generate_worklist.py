@@ -1,4 +1,4 @@
-import openpyxl
+import openpyxl, sys
 import pandas as pd
 from openpyxl.styles import Alignment, PatternFill, Font
 from openpyxl.styles.borders import Border, Side
@@ -12,6 +12,7 @@ def worklist_per_marker(
     primer_name,
     optimal_primers,
     starting_library_number,
+    pool_pcr_replicates,
 ):
     # generate the output dataframe
     output_worklist = pd.DataFrame()
@@ -27,7 +28,15 @@ def worklist_per_marker(
     # find the number of librarys to distribute primers evenly
     available_primers = available_primers.split(",")
     available_primers = [int(primer) for primer in available_primers]
-    number_of_primers = len(available_primers)
+
+    # add a switch here if this code works
+    if pool_pcr_replicates:
+        optimal_primers = [
+            primer for primer in optimal_primers for _ in range(pcr_replicates)
+        ]
+        number_of_primers = len(available_primers) * pcr_replicates
+    else:
+        number_of_primers = len(available_primers)
 
     while True:
         if pcr_plate_count <= number_of_primers:
@@ -45,7 +54,7 @@ def worklist_per_marker(
     # generate the library column
     library_column = []
 
-    for i in range(library_count):
+    for _ in range(library_count):
         for _ in range(plates_per_library):
             library_column.append(starting_library_number)
         starting_library_number += 1
@@ -57,7 +66,7 @@ def worklist_per_marker(
     # find the optimal primers for maximum library diversity
     for primer in optimal_primers:
         if len(primers) < plates_per_library:
-            if primer not in primers and primer in available_primers:
+            if primer in available_primers:  # primer not in primers and
                 primers.append(primer)
         else:
             break
@@ -82,7 +91,14 @@ def worklist_per_marker(
     )
 
 
-def generate_worklist(output_path, project, available_primers, pcr_replicates, markers):
+def generate_worklist(
+    output_path,
+    project,
+    available_primers,
+    pcr_replicates,
+    markers,
+    pool_pcr_replicates,
+):
     # generate the correct path to the file
     input_file = "{}_plate_layout.xlsx".format(project)
     input_file = output_path.joinpath(input_file)
@@ -153,6 +169,7 @@ def generate_worklist(output_path, project, available_primers, pcr_replicates, m
             primer,
             optimal_primer_order,
             next_library,
+            pool_pcr_replicates,
         )
 
         worklists.append(worklist)
