@@ -73,12 +73,16 @@ def generate_plate_layout(
         if well in ncs:
             ## first replicate
             output_dict[number] = [
-                "NC_{}_{}{}".format(nc, letters[letter], letters[letter + 1]),
+                "NC_{}_{}_{}{}".format(
+                    nc, project_name, letters[letter], letters[letter + 1]
+                ),
                 letters[letter],
                 alpha[well],
             ]
             output_dict[number + 96] = [
-                "NC_{}_{}{}".format(nc, letters[letter], letters[letter + 1]),
+                "NC_{}_{}_{}{}".format(
+                    nc, project_name, letters[letter], letters[letter + 1]
+                ),
                 letters[letter + 1],
                 alpha[well],
             ]
