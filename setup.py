@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="leeselab-project-creator",
-    version="1.1.4",
+    version="2.0.0",
     author="Dominik Buchner",
     author_email="dominik.buchner524@googlemail.com",
     description="The leeselab project creator.",
@@ -17,7 +17,7 @@ setuptools.setup(
     install_requires=[
         "openpyxl>=3.1.1",
         "pandas>=1.5.3",
-        "PySimpleGUI >= 4.60.0, <=4.60.5",
+        "FreeSimpleGUI >= 5",
     ],
     include_package_data=True,
     classifiers=[

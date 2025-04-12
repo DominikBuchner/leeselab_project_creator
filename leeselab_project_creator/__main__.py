@@ -1,4 +1,4 @@
-import PySimpleGUI as sg
+import FreeSimpleGUI as sg
 from leeselab_project_creator import generate_plate_layout, generate_worklist
 from pathlib import Path
 
